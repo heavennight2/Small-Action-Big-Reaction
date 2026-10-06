@@ -2,42 +2,57 @@ using UnityEngine;
 
 public class PlatformMovement : MonoBehaviour
 {
-    public float rotationSpeed = 12f;
-    public float maxRotation = 35f;
+    public Transform player;
 
+    public float maxTiltAngle = 38f;
+    public float tiltSpeed = 90f;
+
+    // كل ما كان أصغر، المنصة تصير أكثر حساسية لحركة اللاعب
+    public float sensitivity = 5f;
+
+    private Rigidbody2D rb;
     private bool movementStarted = false;
-    private float direction = 1f;
 
-    void Update()
+    void Start()
+    {
+        rb = GetComponent<Rigidbody2D>();
+    }
+
+    void FixedUpdate()
     {
         if (!movementStarted)
             return;
 
-        // الزاوية الحالية
-        float angle = transform.eulerAngles.z;
+        // بعد اللاعب عن منتصف المنصة
+        float playerOffset = player.position.x - transform.position.x;
 
-        if (angle > 180f)
-            angle -= 360f;
+        // حساسية عالية:
+        // ما يحتاج اللاعب يوصل للطرف عشان المنصة تتأثر
+        float balance = Mathf.Clamp(
+            playerOffset / sensitivity,
+            -1f,
+            1f
+        );
 
-        // إذا وصل اليمين، ارجع
-        if (angle >= maxRotation)
-            direction = -1f;
+        // نخلي التأثير أقوى كل ما ابتعد عن المنتصف
+        float aggressiveBalance =
+            Mathf.Sign(balance) * balance * balance;
 
-        // إذا وصل اليسار، ارجع
-        else if (angle <= -maxRotation)
-            direction = 1f;
+        float targetAngle =
+            -aggressiveBalance * maxTiltAngle;
 
-        // دوران مستمر وناعم
-        float newAngle =
-            angle + direction * rotationSpeed * Time.deltaTime;
+        // المنصة تلحق الوزن بسرعة
+        float newAngle = Mathf.MoveTowardsAngle(
+            rb.rotation,
+            targetAngle,
+            tiltSpeed * Time.fixedDeltaTime
+        );
 
-        transform.rotation =
-            Quaternion.Euler(0f, 0f, newAngle);
+        rb.MoveRotation(newAngle);
     }
 
     public void StartMovement()
     {
         movementStarted = true;
-        direction = 1f;
     }
 }

@@ -2,7 +2,8 @@ using UnityEngine;
 
 public class AcornPickup : MonoBehaviour
 {
-    public PlatformMovement platform;
+    public DisasterManager disasterManager;
+    public RockSpawner rockSpawner;
 
     private void OnTriggerEnter2D(Collider2D other)
     {
@@ -10,10 +11,13 @@ public class AcornPickup : MonoBehaviour
         {
             Debug.Log("ACORN PICKED UP!");
 
-            // شغّل حركة المنصة
-            platform.StartMovement();
+            // الأرض تصير خطرة
+            disasterManager.StartDisaster();
 
-            // أخفِ الـ Acorn
+            // تبدأ الصخور
+            rockSpawner.StartSpawning();
+
+            // يختفي الـ Acorn
             gameObject.SetActive(false);
         }
     }

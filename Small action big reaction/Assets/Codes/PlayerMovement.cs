@@ -2,41 +2,71 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public Transform platform;
+    public float moveSpeed = 7f;
+    public float jumpForce = 14f;
 
-    public float moveSpeed = 6f;
-    public float acceleration = 20f;
+    // يخلي النزول أسرع ومريح
+    public float fallMultiplier = 2.5f;
 
     private Rigidbody2D rb;
+    private bool isGrounded = false;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
     }
 
-    void FixedUpdate()
+    void Update()
     {
-        float input = Input.GetAxisRaw("Horizontal");
+        // الحركة
+        float move = Input.GetAxisRaw("Horizontal");
 
-        // اتجاه سطح المنصة
-        Vector2 platformDirection = platform.right;
-
-        // السرعة الحالية على اتجاه المنصة
-        float currentSpeed =
-            Vector2.Dot(rb.linearVelocity, platformDirection);
-
-        // السرعة اللي اللاعب يبغاها
-        float targetSpeed = input * moveSpeed;
-
-        float newSpeed = Mathf.MoveTowards(
-            currentSpeed,
-            targetSpeed,
-            acceleration * Time.fixedDeltaTime
+        rb.linearVelocity = new Vector2(
+            move * moveSpeed,
+            rb.linearVelocity.y
         );
 
-        // الفرق المطلوب إضافته
-        float speedDifference = newSpeed - currentSpeed;
+        // النط
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        {
+            rb.linearVelocity = new Vector2(
+                rb.linearVelocity.x,
+                jumpForce
+            );
 
-        rb.linearVelocity += platformDirection * speedDifference;
+            isGrounded = false;
+        }
+
+        // إذا بدأ ينزل، نخليه ينزل أسرع
+        if (rb.linearVelocity.y < 0)
+        {
+            rb.linearVelocity += Vector2.up
+                * Physics2D.gravity.y
+                * (fallMultiplier - 1)
+                * Time.deltaTime;
+        }
+    }
+
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        if (!collision.gameObject.CompareTag("Ground"))
+            return;
+
+        foreach (ContactPoint2D contact in collision.contacts)
+        {
+            if (contact.normal.y > 0.5f)
+            {
+                isGrounded = true;
+                return;
+            }
+        }
+    }
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            isGrounded = false;
+        }
     }
 }
