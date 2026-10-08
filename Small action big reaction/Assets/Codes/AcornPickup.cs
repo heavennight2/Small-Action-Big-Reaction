@@ -1,3 +1,4 @@
+
 using UnityEngine;
 using System.Collections;
 using TMPro;
@@ -13,18 +14,19 @@ public class AcornPickup : MonoBehaviour
     public float typingSpeed = 0.05f;
     public float messageStayTime = 2f;
 
-    // Sound
+    // Disaster Sound
     public AudioSource audioSource;
     public AudioClip disasterSound;
+
+    // Background Music
+    public AudioSource backgroundMusic;
 
     private bool pickedUp = false;
 
     private void Start()
     {
         if (escapeTextObject != null)
-        {
             escapeTextObject.SetActive(false);
-        }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -38,46 +40,40 @@ public class AcornPickup : MonoBehaviour
 
         // Play disaster sound
         if (audioSource != null && disasterSound != null)
-        {
             audioSource.PlayOneShot(disasterSound);
+
+        // Start background music
+        if (backgroundMusic != null)
+        {
+            backgroundMusic.loop = true;
+            backgroundMusic.Play();
         }
 
-        // CAMERA SHAKE
+        // Camera shake
         if (CameraShake.instance != null)
         {
-            // Strong shake at first
             CameraShake.instance.StartShake(1.2f, 0.15f);
-
-            // Then keep shaking lightly
             CameraShake.instance.StartContinuousShake(0.04f);
         }
 
         // Start disaster
         if (disasterManager != null)
-        {
             disasterManager.StartDisaster();
-        }
 
-        // Typewriter message
+        // Show text
         if (escapeTextObject != null && escapeText != null)
-        {
             StartCoroutine(TypeMessage());
-        }
 
         // Hide acorn
         SpriteRenderer sprite = GetComponent<SpriteRenderer>();
 
         if (sprite != null)
-        {
             sprite.enabled = false;
-        }
 
         Collider2D col = GetComponent<Collider2D>();
 
         if (col != null)
-        {
             col.enabled = false;
-        }
     }
 
     private IEnumerator TypeMessage()
@@ -94,9 +90,5 @@ public class AcornPickup : MonoBehaviour
         yield return new WaitForSeconds(messageStayTime);
 
         escapeTextObject.SetActive(false);
-
-        // IMPORTANT:
-        // Don't disable the whole acorn object here.
-        // AudioSource may still be using it.
     }
 }

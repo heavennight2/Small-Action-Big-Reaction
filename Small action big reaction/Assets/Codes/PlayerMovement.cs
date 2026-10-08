@@ -1,3 +1,4 @@
+
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
@@ -6,56 +7,86 @@ public class PlayerMovement : MonoBehaviour
     public float jumpForce = 14f;
     public float fallMultiplier = 2.5f;
 
-    // Ground Check
     public Transform groundCheck;
     public float groundCheckRadius = 0.2f;
     public LayerMask groundLayer;
 
+    public int maxJumps = 3;
+
     private Rigidbody2D rb;
+    private SpriteRenderer spriteRenderer;
+
     private bool isGrounded;
+    private bool wasGrounded;
+    private int jumpsRemaining;
+
+    private float horizontalInput;
+    private bool jumpRequested;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+
+        jumpsRemaining = maxJumps;
     }
 
     void Update()
     {
-        // Check if there is ground under the player
+        horizontalInput = Input.GetAxisRaw("Horizontal");
+
+        if (Input.GetKeyDown(KeyCode.Space))
+            jumpRequested = true;
+    }
+
+    void FixedUpdate()
+    {
         isGrounded = Physics2D.OverlapCircle(
             groundCheck.position,
             groundCheckRadius,
             groundLayer
         );
 
-        // Movement
-        float move = Input.GetAxisRaw("Horizontal");
+        // Refill jumps only when landing
+        if (isGrounded && !wasGrounded)
+            jumpsRemaining = maxJumps;
+
+        wasGrounded = isGrounded;
 
         rb.linearVelocity = new Vector2(
-            move * moveSpeed,
+            horizontalInput * moveSpeed,
             rb.linearVelocity.y
         );
 
-        // Jump
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        if (spriteRenderer != null)
+        {
+            if (horizontalInput > 0)
+                spriteRenderer.flipX = false;
+            else if (horizontalInput < 0)
+                spriteRenderer.flipX = true;
+        }
+
+        if (jumpRequested && jumpsRemaining > 0)
         {
             rb.linearVelocity = new Vector2(
                 rb.linearVelocity.x,
                 jumpForce
             );
+
+            jumpsRemaining--;
         }
 
-        // Faster falling
+        jumpRequested = false;
+
         if (rb.linearVelocity.y < 0)
         {
             rb.linearVelocity += Vector2.up
                 * Physics2D.gravity.y
-                * (fallMultiplier - 1)
-                * Time.deltaTime;
+                * (fallMultiplier - 1f)
+                * Time.fixedDeltaTime;
         }
     }
 
-    // Shows the GroundCheck circle in Scene view
     private void OnDrawGizmosSelected()
     {
         if (groundCheck == null)
